@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>GuitarMind - スケールトレーニング</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Noto+Sans+JP:wght@300;400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #12121a;
+    --surface2: #1a1a26;
+    --border: #2a2a40;
+    --accent: #e8b84b;
+    --accent2: #5b8ef0;
+    --accent3: #e85b8e;
+    --text: #e8e8f0;
+    --text-dim: #7a7a9a;
+    --fret-color: #888;
+    --string-color: #c8b86a;
+    --nut-color: #f0e8c8;
+    --root-color: #e8b84b;
+    --scale-color: #5b8ef0;
+    --target-color: #e85b8e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ---- HEADER ---- */
+  header {
+    padding: 16px 20px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(232,184,75,0.4);
+  }
+
+  .level-badge {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    background: rgba(91,142,240,0.1);
+    border: 1px solid var(--accent2);
+    padding: 4px 10px;
+    border-radius: 20px;
+  }
+
+  /* ---- LEVEL TABS ---- */
+  .level-tabs {
+    display: flex;
+    padding: 12px 16px;
+    gap: 8px;
+    overflow-x: auto;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    scrollbar-width: none;
+  }
+  .level-tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .tab.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+    font-weight: 700;
+  }
+  .tab.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ---- MAIN ---- */
+  main { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+  /* ---- QUESTION CARD ---- */
+  .question-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent3));
+  }
+
+  .q-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .q-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .q-chip {
+    padding: 10px 18px;
+    border-radius: 12px;
+    font-size: 17px;
+    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .q-chip span.chip-label {
+    font-size: 11px;
+    font-weight: 400;
+    opacity: 0.7;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .q-chip.key { background: rgba(232,184,75,0.15); border: 1px solid var(--accent); color: var(--accent); }
+  .q-chip.scale { background: rgba(91,142,240,0.15); border: 1px solid var(--accent2); color: var(--accent2); }
+  .q-chip.string { background: rgba(232,91,142,0.15); border: 1px solid var(--accent3); color: var(--accent3); }
+  .q-chip.degree { background: rgba(100,200,130,0.15); border: 1px solid #64c882; color: #64c882; }
+  .q-chip.finger { background: rgba(180,100,220,0.15); border: 1px solid #b464dc; color: #b464dc; }
+
+  .q-summary {
+    font-size: 17px;
+    color: var(--text-dim);
+    line-height: 2;
+    background: var(--bg);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .q-summary strong { color: var(--accent); }
+
+  /* ---- FRETBOARD ---- */
+  .fretboard-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .fb-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+  .fb-title {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .fb-toggle {
+    font-size: 12px;
+    color: var(--accent2);
+    background: none;
+    border: 1px solid var(--accent2);
+    padding: 3px 10px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+  }
+
+  #fretboard-svg {
+    width: 100%;
+    display: block;
+    overflow: visible;
+  }
+
+  /* ---- ANSWER PANEL ---- */
+  .answer-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+
+  .answer-label {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .show-scale-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 12px;
+    border: 2px solid var(--accent2);
+    background: rgba(91,142,240,0.1);
+    color: var(--accent2);
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    letter-spacing: 1px;
+  }
+  .show-scale-btn:hover, .show-scale-btn:active {
+    background: var(--accent2);
+    color: #fff;
+  }
+
+  .reveal-btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    border: 2px solid var(--accent);
+    background: transparent;
+    color: var(--accent);
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 1px;
+  }
+  .reveal-btn:hover, .reveal-btn:active {
+    background: var(--accent);
+    color: #000;
+  }
+
+  .answer-box {
+    display: none;
+    background: var(--bg);
+    border-radius: 10px;
+    padding: 14px;
+    margin-top: 12px;
+  }
+  .answer-box.visible { display: block; animation: fadeIn 0.3s ease; }
+
+  .answer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .answer-row:last-child { border-bottom: none; }
+  .answer-row .akey { color: var(--text-dim); font-size: 12px; }
+  .answer-row .aval { font-family: 'Share Tech Mono', monospace; color: var(--accent); font-weight: 700; }
+
+  /* ---- FEEDBACK ---- */
+  .feedback-btns {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  .fb-btn {
+    flex: 1;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    font-size: 14px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .fb-btn.correct { background: #64c882; color: #000; }
+  .fb-btn.wrong { background: var(--accent3); color: #fff; }
+  .fb-btn:hover { opacity: 0.85; }
+
+  /* ---- GENERATE BTN ---- */
+  .gen-btn {
+    width: 100%;
+    padding: 16px;
+    border-radius: 14px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: #000;
+    font-size: 17px;
+    font-weight: 700;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+    box-shadow: 0 4px 20px rgba(232,184,75,0.25);
+  }
+  .gen-btn:active { transform: scale(0.98); opacity: 0.9; }
+
+  /* ---- SCORE ---- */
+  .score-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .score-item {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  .score-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .score-num.correct { color: #64c882; }
+  .score-num.wrong { color: var(--accent3); }
+  .score-num.streak { color: var(--accent); }
+  .score-sub { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+
+  /* ---- SOUND BTN ---- */
+  .sound-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(91,142,240,0.1);
+    border: 1px solid var(--accent2);
+    color: var(--accent2);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: background 0.2s;
+    margin-top: 10px;
+  }
+  .sound-btn:hover { background: rgba(91,142,240,0.2); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .pulse {
+    animation: pulse 0.4s ease;
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.04); }
+    100% { transform: scale(1); }
+  }
+
+  /* Legend */
+  .legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 10px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  /* ---- SETTINGS ---- */
+  .settings-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 18px;
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+  }
+  .settings-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  #settings-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 200;
+    backdrop-filter: blur(2px);
+  }
+
+  #settings-panel {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    max-height: 85vh;
+    background: var(--surface);
+    border-top: 2px solid var(--accent);
+    border-radius: 20px 20px 0 0;
+    z-index: 201;
+    overflow-y: auto;
+    padding: 0 0 32px;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  }
+  #settings-panel.open { transform: translateY(0); }
+
+  .sp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px 12px;
+    position: sticky; top: 0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+  }
+  .sp-title {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    letter-spacing: 2px;
+    color: var(--accent);
+  }
+  .sp-close {
+    background: none; border: none;
+    color: var(--text-dim); font-size: 18px;
+    cursor: pointer; padding: 4px 8px;
+  }
+
+  .sp-section {
+    padding: 14px 20px 10px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sp-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+  .sp-hint {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-weight: 400;
+  }
+
+  .sp-checks {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+  .sp-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 14px;
+    border-radius: 20px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Noto Sans JP', sans-serif;
+    color: var(--text-dim);
+    background: var(--bg);
+    transition: all 0.15s;
+    user-select: none;
+    position: relative;
+  }
+  .sp-chip::before {
+    content: '○';
+    font-size: 11px;
+    opacity: 0.5;
+  }
+  /* 選択済み：各カテゴリ色でハイライト */
+  .sp-chip.on-yellow {
+    border-color: var(--accent);
+    background: rgba(232,184,75,0.18);
+    color: var(--accent);
+    font-weight: 700;
+  }
+  .sp-chip.on-yellow::before { content: '✓'; opacity: 1; }
+
+  .sp-chip.on-blue {
+    border-color: var(--accent2);
+    background: rgba(91,142,240,0.18);
+    color: var(--accent2);
+    font-weight: 700;
+  }
+  .sp-chip.on-blue::before { content: '✓'; opacity: 1; }
+
+  .sp-chip.on-pink {
+    border-color: var(--accent3);
+    background: rgba(232,91,142,0.18);
+    color: var(--accent3);
+    font-weight: 700;
+  }
+  .sp-chip.on-pink::before { content: '✓'; opacity: 1; }
+
+  .sp-chip.on-green {
+    border-color: #64c882;
+    background: rgba(100,200,130,0.18);
+    color: #64c882;
+    font-weight: 700;
+  }
+  .sp-chip.on-green::before { content: '✓'; opacity: 1; }
+
+  .sp-quick {
+    display: flex; gap: 8px;
+  }
+  .sp-quick button {
+    padding: 4px 10px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Noto Sans JP', sans-serif;
+    transition: all 0.15s;
+  }
+  .sp-quick button:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .sp-apply {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 16px 20px 0;
+    padding: 14px;
+    border-radius: 12px;
+    border: none;
+    background: linear-gradient(135deg, var(--accent), var(--accent3));
+    color: #000;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Noto Sans JP', sans-serif;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+
+  /* ---- LANG SWITCH ---- */
+  .lang-switch {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 4px 10px;
+    cursor: pointer;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    user-select: none;
+    transition: border-color 0.2s;
+  }
+  .lang-switch:hover { border-color: var(--accent2); }
+  .lang-sep { color: var(--border); }
+  .lang-opt { color: var(--text-dim); transition: color 0.2s; }
+  .lang-opt.active { color: var(--accent2); font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">GuitarMind</div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <div class="lang-switch" onclick="toggleLang()">
+      <span class="lang-opt" id="lang-ja">JA</span>
+      <span class="lang-sep">|</span>
+      <span class="lang-opt" id="lang-en">EN</span>
+    </div>
+    <div class="level-badge" id="level-badge">Lv.1 BEGINNER</div>
+    <button class="settings-btn" onclick="toggleSettings()" title="練習設定">⚙️</button>
+  </div>
+</header>
+
+<!-- SETTINGS PANEL -->
+<div id="settings-overlay" onclick="closeSettings()" style="display:none;"></div>
+<div id="settings-panel" style="display:none;">
+  <div class="sp-header">
+    <div class="sp-title">// 練習設定</div>
+    <button class="sp-close" onclick="closeSettings()">✕</button>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">スケール <span class="sp-hint">（複数選択可）</span></div>
+    <div class="sp-checks" id="scale-checks"></div>
+    <div class="sp-quick">
+      <button onclick="selectAllScales()">すべて選択</button>
+      <button onclick="clearAllScales()">すべて解除</button>
+    </div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">弦 <span class="sp-hint">（複数選択可）</span></div>
+    <div class="sp-checks" id="string-checks"></div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">度数 <span class="sp-hint">（複数選択可）</span></div>
+    <div class="sp-checks" id="degree-checks"></div>
+    <div class="sp-quick">
+      <button onclick="selectAllDegrees()">すべて選択</button>
+      <button onclick="clearAllDegrees()">すべて解除</button>
+    </div>
+  </div>
+
+  <div class="sp-section">
+    <div class="sp-label">キー <span class="sp-hint">（複数選択可）</span></div>
+    <div class="sp-checks" id="key-checks"></div>
+    <div class="sp-quick">
+      <button onclick="selectAllKeys()">すべて選択</button>
+      <button onclick="selectNaturalKeys()">ナチュラルのみ</button>
+    </div>
+  </div>
+
+  <button class="sp-apply" onclick="applySettings()">✓ この設定で練習する</button>
+</div>
+
+<div class="level-tabs" id="level-tabs">
+</div>
+
+<main>
+  <!-- SCORE -->
+  <div class="score-bar">
+    <div class="score-item">
+      <div class="score-num correct" id="score-correct">0</div>
+      <div class="score-sub">正解</div>
+    </div>
+    <div class="score-item">
+      <div class="score-num wrong" id="score-wrong">0</div>
+      <div class="score-sub">不正解</div>
+    </div>
+    <div class="score-item">
+      <div class="score-num streak" id="score-streak">0</div>
+      <div class="score-sub">連続正解🔥</div>
+    </div>
+  </div>
+
+  <!-- QUESTION CARD -->
+  <div class="question-card" id="question-card">
+    <div class="q-label">// 出題</div>
+    <div class="q-items" id="q-chips">
+      <div style="color:var(--text-dim); font-size:14px;">▼ ボタンを押して出題スタート</div>
+    </div>
+    <div class="q-summary" id="q-summary" style="display:none;"></div>
+  </div>
+
+  <!-- FRETBOARD -->
+  <div class="fretboard-wrap" id="fretboard-wrap" style="display:none;">
+    <div class="fb-header">
+      <div class="fb-title">// 指板</div>
+      <button class="fb-toggle" id="fb-toggle" onclick="toggleFretboard()" style="display:none;">スケールを隠す</button>
+    </div>
+    <svg id="fretboard-svg" viewBox="0 0 320 140"></svg>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--root-color)"></div>ルート</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--target-color)"></div>スタート音</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--scale-color)"></div>スケール音</div>
+    </div>
+    <button class="sound-btn" id="play-btn" onclick="playScaleSound()">▶ 音を再生</button>
+  </div>
+
+  <!-- ANSWER -->
+  <div class="answer-wrap" id="answer-wrap" style="display:none;">
+    <div class="answer-label">// 答え合わせ</div>
+    <button class="reveal-btn" onclick="revealAnswer()">答えを確認する</button>
+    <div class="answer-box" id="answer-box"></div>
+    <button class="show-scale-btn" id="show-scale-btn" onclick="showScale()" style="display:none;">🎵 スケールを見る</button>
+    <div class="feedback-btns" id="feedback-btns" style="display:none;">
+      <button class="fb-btn correct" onclick="recordResult(true)">✓ 正解</button>
+      <button class="fb-btn wrong" onclick="recordResult(false)">✗ 不正解</button>
+    </div>
+  </div>
+
+  <!-- GENERATE -->
+  <button class="gen-btn" onclick="generate()">次の問題を出題 ▶</button>
+</main>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const NOTES_SHARP = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const NOTE_NAMES = {
+  'C':'C','C#':'C#','D':'D','D#':'D#','E':'E',
+  'F':'F','F#':'F#','G':'G','G#':'G#','A':'A','A#':'A#','B':'B',
+  'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'
+};
+
+const SCALES = {
+  'Major':             [0,2,4,5,7,9,11],
+  'Natural Minor':     [0,2,3,5,7,8,10],
+  'Harmonic Minor':    [0,2,3,5,7,8,11],
+  'Melodic Minor':     [0,2,3,5,7,9,11],
+  'Dorian':            [0,2,3,5,7,9,10],
+  'Mixolydian':        [0,2,4,5,7,9,10],
+  'Lydian b7':         [0,2,4,6,7,9,10],
+  'Altered':           [0,1,3,4,6,8,10],
+};
+
+// ============================================================
+// i18n
+// ============================================================
+let lang = 'ja';
+try { lang = localStorage.getItem('gm_lang') || 'ja'; } catch(e){}
+
+const I18N = {
+  ja: {
+    title:          'GuitarMind - スケールトレーニング',
+    settingsTitle:  '// 練習設定',
+    settingsTip:    '練習設定',
+    scaleLabel:     'スケール',
+    stringLabel:    '弦',
+    degreeLabel:    '度数',
+    keyLabel:       'キー',
+    multiHint:      '（複数選択可）',
+    selectAll:      'すべて選択',
+    clearAll:       'すべて解除',
+    naturalOnly:    'ナチュラルのみ',
+    applyBtn:       '✓ この設定で練習する',
+    scoreCorrect:   '正解',
+    scoreWrong:     '不正解',
+    scoreStreak:    '連続正解🔥',
+    qLabel:         '// 出題',
+    qStart:         '▼ ボタンを押して出題スタート',
+    fbTitle:        '// 指板',
+    showScale:      'スケールを見る',
+    hideScale:      'スケールを隠す',
+    legendRoot:     'ルート',
+    legendStart:    'スタート音',
+    legendScale:    'スケール音',
+    playBtn:        '▶ 音を再生',
+    answerLabel:    '// 答え合わせ',
+    revealBtn:      '答えを確認する',
+    showScaleBtn:   '🎵 スケールを見る',
+    btnCorrect:     '✓ 正解',
+    btnWrong:       '✗ 不正解',
+    genBtn:         '次の問題を出題 ▶',
+    ansStartNote:   'スタート音',
+    ansRoot:        'ルート',
+    ansInterval:    '度数の音程',
+    ansScale:       'スケール',
+    ansFinger:      '指',
+    customMode:     'カスタムモード',
+    unlockMsg:      (name) => `🔓 レベルアップ！ ${name} がアンロックされました！`,
+    levelNames:     ['Lv.1 メジャーのみ','Lv.2 +マイナー','Lv.3 +ハーモニック','Lv.4 +メロディック','Lv.5 全スケール'],
+    scaleNames:     { 'Major':'メジャースケール','Natural Minor':'ナチュラルマイナー','Harmonic Minor':'ハーモニックマイナー','Melodic Minor':'メロディックマイナー','Dorian':'ドリアン','Mixolydian':'ミクソリディアン','Lydian b7':'リディアン b7','Altered':'オルタード' },
+    degreeNames:    ['Root','2度','3度','4度','5度','6度','7度'],
+    fingerNames:    ['人差し指','中指','薬指','小指'],
+    stringNames:    ['6弦','5弦','4弦'],
+    stringLabels:   { '6弦':'6弦','5弦':'5弦','4弦':'4弦' },
+    chipLabels:     { key:'KEY', scale:'SCALE', string:'弦', degree:'度数', finger:'指' },
+    summary:        (key, scale, string, degree, finger) =>
+      `キー <strong>${key}</strong> の ${scale}、<strong>${string}</strong> の <strong>${degree}</strong> から <strong>${finger}</strong> でスタート`,
+    fretUnit:       'フレット',
+    semitoneUnit:   '半音',
+  },
+  en: {
+    title:          'GuitarMind - Scale Trainer',
+    settingsTitle:  '// Practice Settings',
+    settingsTip:    'Settings',
+    scaleLabel:     'Scale',
+    stringLabel:    'String',
+    degreeLabel:    'Degree',
+    keyLabel:       'Key',
+    multiHint:      '(multi-select)',
+    selectAll:      'Select All',
+    clearAll:       'Clear All',
+    naturalOnly:    'Natural Keys Only',
+    applyBtn:       '✓ Start Practice',
+    scoreCorrect:   'Correct',
+    scoreWrong:     'Wrong',
+    scoreStreak:    'Streak🔥',
+    qLabel:         '// Question',
+    qStart:         '▼ Press the button to start',
+    fbTitle:        '// Fretboard',
+    showScale:      'Show Scale',
+    hideScale:      'Hide Scale',
+    legendRoot:     'Root',
+    legendStart:    'Start Note',
+    legendScale:    'Scale Note',
+    playBtn:        '▶ Play Sound',
+    answerLabel:    '// Check Answer',
+    revealBtn:      'Reveal Answer',
+    showScaleBtn:   '🎵 Show Scale',
+    btnCorrect:     '✓ Correct',
+    btnWrong:       '✗ Wrong',
+    genBtn:         'Next Question ▶',
+    ansStartNote:   'Start Note',
+    ansRoot:        'Root',
+    ansInterval:    'Interval',
+    ansScale:       'Scale',
+    ansFinger:      'Finger',
+    customMode:     'Custom Mode',
+    unlockMsg:      (name) => `🔓 Level Up! ${name} unlocked!`,
+    levelNames:     ['Lv.1 Major Only','Lv.2 +Minor','Lv.3 +Harmonic','Lv.4 +Melodic','Lv.5 All Scales'],
+    scaleNames:     { 'Major':'Major','Natural Minor':'Natural Minor','Harmonic Minor':'Harmonic Minor','Melodic Minor':'Melodic Minor','Dorian':'Dorian','Mixolydian':'Mixolydian','Lydian b7':'Lydian b7','Altered':'Altered' },
+    degreeNames:    ['Root','2nd','3rd','4th','5th','6th','7th'],
+    fingerNames:    ['Index','Middle','Ring','Pinky'],
+    stringNames:    ['6th','5th','4th'],
+    stringLabels:   { '6弦':'6th St.','5弦':'5th St.','4弦':'4th St.' },
+    chipLabels:     { key:'KEY', scale:'SCALE', string:'STRING', degree:'DEGREE', finger:'FINGER' },
+    summary:        (key, scale, string, degree, finger) =>
+      `Key: <strong>${key}</strong> / ${scale} / <strong>${string}</strong> / <strong>${degree}</strong> / start with <strong>${finger}</strong>`,
+    fretUnit:       'fret',
+    semitoneUnit:   'semitones',
+  }
+};
+
+function t() { return I18N[lang]; }
+
+function toggleLang() {
+  lang = lang === 'ja' ? 'en' : 'ja';
+  try { localStorage.setItem('gm_lang', lang); } catch(e){}
+  applyLang();
+  // 現在の問題があれば再描画
+  if (state.current) renderQuestion();
+  renderLevelTabs();
+}
+
+function applyLang() {
+  const L = t();
+  document.documentElement.lang = lang;
+  document.title = L.title;
+
+  // Lang switch highlight
+  document.getElementById('lang-ja').classList.toggle('active', lang === 'ja');
+  document.getElementById('lang-en').classList.toggle('active', lang === 'en');
+
+  // Settings panel
+  document.querySelector('.sp-title').textContent    = L.settingsTitle;
+  document.querySelector('.settings-btn').title      = L.settingsTip;
+
+  // Settings section labels & buttons
+  const spLabels = document.querySelectorAll('.sp-label');
+  if (spLabels[0]) spLabels[0].innerHTML = `${L.scaleLabel} <span class="sp-hint">${L.multiHint}</span>`;
+  if (spLabels[1]) spLabels[1].innerHTML = `${L.stringLabel} <span class="sp-hint">${L.multiHint}</span>`;
+  if (spLabels[2]) spLabels[2].innerHTML = `${L.degreeLabel} <span class="sp-hint">${L.multiHint}</span>`;
+  if (spLabels[3]) spLabels[3].innerHTML = `${L.keyLabel} <span class="sp-hint">${L.multiHint}</span>`;
+
+  const spQuickBtns = document.querySelectorAll('.sp-quick button');
+  if (spQuickBtns[0]) spQuickBtns[0].textContent = L.selectAll;
+  if (spQuickBtns[1]) spQuickBtns[1].textContent = L.clearAll;
+  if (spQuickBtns[2]) spQuickBtns[2].textContent = L.selectAll;
+  if (spQuickBtns[3]) spQuickBtns[3].textContent = L.clearAll;
+  if (spQuickBtns[4]) spQuickBtns[4].textContent = L.selectAll;
+  if (spQuickBtns[5]) spQuickBtns[5].textContent = L.naturalOnly;
+  document.querySelector('.sp-apply').textContent   = L.applyBtn;
+
+  // Score
+  const scoreSubs = document.querySelectorAll('.score-sub');
+  if (scoreSubs[0]) scoreSubs[0].textContent = L.scoreCorrect;
+  if (scoreSubs[1]) scoreSubs[1].textContent = L.scoreWrong;
+  if (scoreSubs[2]) scoreSubs[2].textContent = L.scoreStreak;
+
+  // Question card
+  document.querySelector('.q-label').textContent    = L.qLabel;
+  const qChips = document.getElementById('q-chips');
+  if (!state.current) qChips.innerHTML = `<div style="color:var(--text-dim);font-size:14px;">${L.qStart}</div>`;
+
+  // Fretboard
+  document.querySelector('.fb-title').textContent   = L.fbTitle;
+  const fbToggle = document.getElementById('fb-toggle');
+  if (fbToggle) fbToggle.textContent = state.showScale ? L.hideScale : L.showScale;
+
+  // Legend
+  const legendItems = document.querySelectorAll('.legend-item');
+  if (legendItems[0]) legendItems[0].childNodes[1].textContent = L.legendRoot;
+  if (legendItems[1]) legendItems[1].childNodes[1].textContent = L.legendStart;
+  if (legendItems[2]) legendItems[2].childNodes[1].textContent = L.legendScale;
+
+  document.getElementById('play-btn').textContent   = L.playBtn;
+
+  // Answer
+  document.querySelector('.answer-label').textContent = L.answerLabel;
+  document.querySelector('.reveal-btn').textContent   = L.revealBtn;
+  document.getElementById('show-scale-btn').textContent = L.showScaleBtn;
+  const fbBtns = document.querySelectorAll('.fb-btn');
+  if (fbBtns[0]) fbBtns[0].textContent = L.btnCorrect;
+  if (fbBtns[1]) fbBtns[1].textContent = L.btnWrong;
+
+  // Generate button
+  document.querySelector('.gen-btn').textContent    = L.genBtn;
+
+  // rebuild settings chips if panel is open
+  if (document.getElementById('settings-panel').classList.contains('open')) {
+    buildSettingsUI();
+  }
+}
+
+// 内部キーとして常に日本語の度数・弦名を使用（表示時にt()で変換）
+const DEGREE_NAMES    = ['Root','2度','3度','4度','5度','6度','7度'];
+const DEGREE_NAMES_EN = ['Root','2nd','3rd','4th','5th','6th','7th'];
+const FINGERS_JA = ['人差し指','中指','薬指','小指'];
+const FINGERS_EN = ['Index','Middle','Ring','Pinky'];
+const STRINGS = ['6弦','5弦','4弦'];
+
+// 表示用ヘルパー
+function scaleName(key) { return t().scaleNames[key] || key; }
+function degreeName(d)  {
+  const idx = DEGREE_NAMES.indexOf(d);
+  return idx >= 0 ? t().degreeNames[idx] : d;
+}
+function fingerName(f) {
+  const idx = FINGERS_JA.indexOf(f);
+  return idx >= 0 ? t().fingerNames[idx] : f;
+}
+function stringLabel(s) { return t().stringLabels[s] || s; }
+
+// Open string notes
+const OPEN_STRING_NOTE = {
+  '6弦': ['E','F','F#','G','G#','A','A#','B','C','C#','D','D#'],
+  '5弦': ['A','A#','B','C','C#','D','D#','E','F','F#','G','G#'],
+  '4弦': ['D','D#','E','F','F#','G','G#','A','A#','B','C','C#'],
+};
+
+// LEVEL definitions（内部キーは固定、表示名はrenderLevelTabsでt()から取得）
+const LEVELS = [
+  { scales:['Major'],                                                              keys:['C','G','D','F'],         degrees:['Root','2度','3度'],    threshold:5   },
+  { scales:['Major','Natural Minor'],                                              keys:['C','G','D','F','A','E'], degrees:DEGREE_NAMES,             threshold:10  },
+  { scales:['Major','Natural Minor','Harmonic Minor'],                             keys:NOTES_SHARP,               degrees:DEGREE_NAMES,             threshold:15  },
+  { scales:['Major','Natural Minor','Harmonic Minor','Melodic Minor','Dorian'],   keys:NOTES_SHARP,               degrees:DEGREE_NAMES,             threshold:20  },
+  { scales:Object.keys(SCALES),                                                    keys:NOTES_SHARP,               degrees:DEGREE_NAMES,             threshold:999 },
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  level: 0,
+  correct: 0,
+  wrong: 0,
+  streak: 0,
+  streak_best: 0,
+  current: null,
+  showScale: false,
+  showTargetOnly: false,
+  answered: false,
+};
+
+let unlockedLevel = 0;
+try { unlockedLevel = parseInt(localStorage.getItem('gm_unlocked') || '0'); } catch(e){}
+let scoreCorrect = 0, scoreWrong = 0, streak = 0;
+try {
+  scoreCorrect = parseInt(localStorage.getItem('gm_correct') || '0');
+  scoreWrong = parseInt(localStorage.getItem('gm_wrong') || '0');
+  streak = parseInt(localStorage.getItem('gm_streak') || '0');
+} catch(e){}
+
+function saveState() {
+  try {
+    localStorage.setItem('gm_unlocked', unlockedLevel);
+    localStorage.setItem('gm_correct', scoreCorrect);
+    localStorage.setItem('gm_wrong', scoreWrong);
+    localStorage.setItem('gm_streak', streak);
+  } catch(e){}
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.onload = function() {
+  applyLang();
+  renderLevelTabs();
+  updateScoreDisplay();
+};
+
+function renderLevelTabs() {
+  const tabIcons = ['🎸','🎵','🎶','🔥','⭐'];
+  const L = t();
+  const container = document.getElementById('level-tabs');
+  container.innerHTML = L.levelNames.map((name, i) => {
+    const unlocked = i <= unlockedLevel;
+    const isActive = i === state.level && !customSettings.active;
+    const icon = unlocked ? tabIcons[i] : '🔒';
+    const classes = ['tab', !unlocked ? 'locked' : '', isActive ? 'active' : ''].filter(Boolean).join(' ');
+    return `<button class="${classes}" data-level="${i}" onclick="selectLevel(${i})">${icon} ${name}</button>`;
+  }).join('');
+
+  if (customSettings.active) {
+    document.getElementById('level-badge').textContent = L.customMode;
+    document.getElementById('level-badge').style.borderColor = 'var(--accent3)';
+    document.getElementById('level-badge').style.color = 'var(--accent3)';
+    document.getElementById('level-badge').style.background = 'rgba(232,91,142,0.1)';
+  } else {
+    const badgeNames = ['BEGINNER','EASY','MEDIUM','HARD','EXPERT'];
+    document.getElementById('level-badge').textContent = `Lv.${state.level+1} ${badgeNames[state.level]}`;
+    document.getElementById('level-badge').style.borderColor = '';
+    document.getElementById('level-badge').style.color = '';
+    document.getElementById('level-badge').style.background = '';
+  }
+}
+
+function selectLevel(idx) {
+  if (idx > unlockedLevel) return;
+  state.level = idx;
+  customSettings.active = false;
+  renderLevelTabs(); // バッジもここで更新
+}
+
+// ============================================================
+// SETTINGS (カスタム練習モード)
+// ============================================================
+const ALL_SCALE_KEYS = Object.keys(SCALES);
+const ALL_KEY_LIST = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const ALL_STRING_LIST = ['6弦','5弦','4弦'];
+const ALL_DEGREE_LIST = ['Root','2度','3度','4度','5度','6度','7度'];
+
+let customSettings = {
+  active: false,
+  scales: [...ALL_SCALE_KEYS],
+  keys: [...ALL_KEY_LIST],
+  strings: [...ALL_STRING_LIST],
+  degrees: [...ALL_DEGREE_LIST],
+};
+
+function toggleSettings() {
+  const panel = document.getElementById('settings-panel');
+  const overlay = document.getElementById('settings-overlay');
+  if (panel.classList.contains('open')) {
+    closeSettings();
+  } else {
+    buildSettingsUI();
+    overlay.style.display = 'block';
+    panel.style.display = 'block';
+    requestAnimationFrame(() => panel.classList.add('open'));
+  }
+}
+
+function closeSettings() {
+  const panel = document.getElementById('settings-panel');
+  const overlay = document.getElementById('settings-overlay');
+  panel.classList.remove('open');
+  setTimeout(() => {
+    overlay.style.display = 'none';
+    panel.style.display = 'none';
+  }, 350);
+}
+
+function buildSettingsUI() {
+  function makeChips(containerId, items, selectedArr, colorClass, type) {
+    const el = document.getElementById(containerId);
+    el.innerHTML = items.map(val => {
+      const isOn = selectedArr.includes(val);
+      const label = type === 'scale'  ? scaleName(val)
+                  : type === 'degree' ? degreeName(val)
+                  : type === 'string' ? stringLabel(val)
+                  : val;
+      return `<div class="sp-chip ${isOn ? colorClass : ''}" data-type="${type}" data-value="${val}" data-color="${colorClass}" onclick="toggleChip(this)">${label}</div>`;
+    }).join('');
+  }
+
+  makeChips('scale-checks', ALL_SCALE_KEYS,    customSettings.scales,  'on-yellow', 'scale');
+  makeChips('string-checks', ALL_STRING_LIST,  customSettings.strings, 'on-pink',   'string');
+  makeChips('degree-checks', ALL_DEGREE_LIST,  customSettings.degrees, 'on-green',  'degree');
+  makeChips('key-checks',    ALL_KEY_LIST,      customSettings.keys,    'on-blue',   'key');
+}
+
+function toggleChip(el) {
+  const type      = el.dataset.type;
+  const value     = el.dataset.value;
+  const colorClass = el.dataset.color;
+  const arrMap    = { scale: 'scales', key: 'keys', string: 'strings', degree: 'degrees' };
+  const arr       = customSettings[arrMap[type]];
+  const isOn      = el.classList.contains(colorClass);
+
+  // 最低1つは残す
+  if (isOn && arr.length <= 1) return;
+
+  if (isOn) {
+    el.classList.remove(colorClass);
+    arr.splice(arr.indexOf(value), 1);
+  } else {
+    el.classList.add(colorClass);
+    arr.push(value);
+  }
+}
+
+function selectAllScales()    { customSettings.scales  = [...ALL_SCALE_KEYS];  buildSettingsUI(); }
+function clearAllScales()     { customSettings.scales  = ['Major'];            buildSettingsUI(); }
+function selectAllDegrees()   { customSettings.degrees = [...ALL_DEGREE_LIST]; buildSettingsUI(); }
+function clearAllDegrees()    { customSettings.degrees = ['Root'];             buildSettingsUI(); }
+function selectAllKeys()      { customSettings.keys    = [...ALL_KEY_LIST];    buildSettingsUI(); }
+function selectNaturalKeys()  { customSettings.keys    = ['C','D','E','F','G','A','B']; buildSettingsUI(); }
+
+function applySettings() {
+  customSettings.active = true;
+  closeSettings();
+  renderLevelTabs();
+  generate();
+}
+
+// ============================================================
+// GENERATE QUESTION
+// ============================================================
+function randItem(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function generate() {
+  state.answered = false;
+  state.showScale = false;
+  state.showTargetOnly = false;
+  document.getElementById('fb-toggle').style.display = 'none';
+  document.getElementById('show-scale-btn').style.display = 'none';
+
+  const lv = LEVELS[state.level];
+  // カスタムモードが有効な場合はその設定を使う
+  const scalePool  = customSettings.active ? customSettings.scales  : lv.scales;
+  const keyPool    = customSettings.active ? customSettings.keys    : lv.keys;
+  const stringPool = customSettings.active ? customSettings.strings : STRINGS;
+  const degreePool = customSettings.active ? customSettings.degrees : lv.degrees;
+
+  const key    = randItem(keyPool);
+  const scale  = randItem(scalePool);
+  const string = randItem(stringPool);
+  const degree = randItem(degreePool);
+  const finger = randItem(FINGERS_JA);
+
+  // Compute target note
+  const scaleIntervals = SCALES[scale];
+  const degIdx = DEGREE_NAMES.indexOf(degree);
+  const semitones = scaleIntervals[degIdx];
+  const keyIdx = NOTES_SHARP.indexOf(enharmonic(key));
+  const targetNoteIdx = (keyIdx + semitones) % 12;
+  const targetNote = NOTES_SHARP[targetNoteIdx];
+
+  // Find fret on string
+  const openNotes = OPEN_STRING_NOTE[string];
+  let targetFret = openNotes.indexOf(targetNote);
+  if (targetFret < 0) {
+    // try shifted
+    for (let f = 0; f < 12; f++) {
+      if (openNotes[f % 12] === targetNote) { targetFret = f; break; }
+    }
+  }
+  // Prefer frets 0-12
+  if (targetFret < 0) targetFret = 0;
+
+  // Find root fret
+  const rootFret = openNotes.indexOf(enharmonic(key));
+
+  state.current = { key, scale, string, degree, finger, targetNote, targetFret, rootFret, scaleIntervals, keyIdx };
+
+  renderQuestion();
+  renderFretboard();
+  document.getElementById('fretboard-wrap').style.display = 'block';
+  document.getElementById('answer-wrap').style.display = 'block';
+  document.getElementById('answer-box').classList.remove('visible');
+  document.getElementById('feedback-btns').style.display = 'none';
+  document.querySelector('.reveal-btn').style.display = 'block';
+  document.getElementById('question-card').classList.add('pulse');
+  setTimeout(() => document.getElementById('question-card').classList.remove('pulse'), 400);
+}
+
+function enharmonic(note) {
+  const map = {'Db':'C#','Eb':'D#','Gb':'F#','Ab':'G#','Bb':'A#'};
+  return map[note] || note;
+}
+
+function renderQuestion() {
+  const c = state.current;
+  const L = t();
+  const chips = document.getElementById('q-chips');
+  chips.innerHTML = `
+    <div class="q-chip key"><span class="chip-label">${L.chipLabels.key}</span>${c.key}</div>
+    <div class="q-chip scale"><span class="chip-label">${L.chipLabels.scale}</span>${scaleName(c.scale)}</div>
+    <div class="q-chip string"><span class="chip-label">${L.chipLabels.string}</span>${stringLabel(c.string)}</div>
+    <div class="q-chip degree"><span class="chip-label">${L.chipLabels.degree}</span>${degreeName(c.degree)}</div>
+    <div class="q-chip finger"><span class="chip-label">${L.chipLabels.finger}</span>${fingerName(c.finger)}</div>
+  `;
+  document.getElementById('q-summary').style.display = 'block';
+  document.getElementById('q-summary').innerHTML =
+    L.summary(c.key, scaleName(c.scale), stringLabel(c.string), degreeName(c.degree), fingerName(c.finger));
+}
+
+// ============================================================
+// FRETBOARD
+// ============================================================
+const FB = {
+  strings: 6,
+  frets: 13,
+  padL: 28,
+  padR: 10,
+  padT: 16,
+  padB: 16,
+  w: 320,
+  h: 140,
+};
+
+const ALL_STRINGS = ['1弦','2弦','3弦','4弦','5弦','6弦'];
+const ALL_OPEN = {
+  '6弦':['E','F','F#','G','G#','A','A#','B','C','C#','D','D#'],
+  '5弦':['A','A#','B','C','C#','D','D#','E','F','F#','G','G#'],
+  '4弦':['D','D#','E','F','F#','G','G#','A','A#','B','C','C#'],
+  '3弦':['G','G#','A','A#','B','C','C#','D','D#','E','F','F#'],
+  '2弦':['B','C','C#','D','D#','E','F','F#','G','G#','A','A#'],
+  '1弦':['E','F','F#','G','G#','A','A#','B','C','C#','D','D#'],
+};
+
+function stringY(sIdx) {
+  const usable = FB.h - FB.padT - FB.padB;
+  return FB.padT + (sIdx / (FB.strings - 1)) * usable;
+}
+function fretX(fIdx) {
+  const usable = FB.w - FB.padL - FB.padR;
+  return FB.padL + (fIdx / FB.frets) * usable;
+}
+
+function renderFretboard() {
+  const svg = document.getElementById('fretboard-svg');
+  const c = state.current;
+  let html = '';
+
+  // Background
+  html += `<rect x="0" y="0" width="${FB.w}" height="${FB.h}" rx="8" fill="#1a1208"/>`;
+
+  // Nut
+  html += `<rect x="${FB.padL-2}" y="${FB.padT}" width="4" height="${FB.h - FB.padT - FB.padB}" rx="2" fill="${'#d4c090'}"/>`;
+
+  // Fret markers
+  [3,5,7,9,12].forEach(f => {
+    if (f > FB.frets) return;
+    const x = fretX(f) - (fretX(1)-fretX(0))/2;
+    html += `<circle cx="${x}" cy="${FB.h/2}" r="4" fill="#333" opacity="0.6"/>`;
+    if (f === 12) html += `<circle cx="${x}" cy="${FB.h/2 - 10}" r="4" fill="#333" opacity="0.6"/>`;
+  });
+
+  // Frets
+  for (let f = 1; f <= FB.frets; f++) {
+    const x = fretX(f);
+    html += `<line x1="${x}" y1="${FB.padT}" x2="${x}" y2="${FB.h - FB.padB}" stroke="#555" stroke-width="1.5"/>`;
+  }
+
+  // Strings: s=0→1弦(top,thin), s=5→6弦(bottom,thick)
+  for (let s = 0; s < FB.strings; s++) {
+    const y = stringY(s);
+    const stringNum = s + 1;
+    const thick = 1 + (s * 0.4);
+    html += `<line x1="${FB.padL - 2}" y1="${y}" x2="${FB.w - FB.padR}" y2="${y}" stroke="#b8a84a" stroke-width="${thick}" opacity="0.8"/>`;
+    html += `<text x="${FB.padL - 6}" y="${y + 4}" text-anchor="end" fill="#888" font-size="9" font-family="monospace">${stringNum}</text>`;
+  }
+
+  // Fret numbers
+  for (let f = 0; f <= FB.frets; f++) {
+    if (f % 2 === 0 && f > 0) {
+      const x = fretX(f) - (fretX(1)-fretX(0))/2;
+      html += `<text x="${x}" y="${FB.h - 2}" text-anchor="middle" fill="#555" font-size="8" font-family="monospace">${f}</text>`;
+    }
+  }
+
+  // Scale notes (if show)
+  if (state.showScale) {
+    const { scaleIntervals, keyIdx } = c;
+    ALL_STRINGS.forEach((strName, sIdx) => {
+      const openArr = ALL_OPEN[strName];
+      for (let f = 0; f <= FB.frets; f++) {
+        const noteIdx = NOTES_SHARP.indexOf(openArr[f % 12]);
+        const interval = (noteIdx - keyIdx + 12) % 12;
+        if (scaleIntervals.includes(interval)) {
+          const x = f === 0 ? FB.padL - 8 : fretX(f) - (fretX(1)-fretX(0))/2;
+          const y = stringY(sIdx);
+          const isRoot = interval === 0;
+          const fill = isRoot ? 'var(--root-color)' : 'var(--scale-color)';
+          html += `<circle cx="${x}" cy="${y}" r="7" fill="${fill}" opacity="0.85"/>`;
+          const noteName = NOTES_SHARP[(keyIdx + interval) % 12];
+          html += `<text x="${x}" y="${y+3}" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">${noteName}</text>`;
+        }
+      }
+    });
+  }
+
+  // Target dot と Root dot：答えを確認した後のみ表示
+  if (state.showTargetOnly) {
+    const targetStrIdx = ALL_STRINGS.indexOf(c.string);
+    const tf = c.targetFret;
+    const tx = tf === 0 ? FB.padL - 8 : fretX(tf) - (fretX(1)-fretX(0))/2;
+    const ty = stringY(targetStrIdx);
+
+    // スタート音（ターゲット）ドット
+    html += `<circle cx="${tx}" cy="${ty}" r="12" fill="none" stroke="var(--target-color)" stroke-width="2" opacity="0.5"/>`;
+    html += `<circle cx="${tx}" cy="${ty}" r="9" fill="var(--target-color)" opacity="0.9"/>`;
+    html += `<text x="${tx}" y="${ty+4}" text-anchor="middle" fill="#fff" font-size="8" font-weight="bold">${c.targetNote}</text>`;
+
+    // 4・5・6弦上のroot位置を表示（targetFretに近い位置を選ぶ）
+    const rootNote = enharmonic(c.key);
+    ['4弦','5弦','6弦'].forEach(strName => {
+      const sIdx = ALL_STRINGS.indexOf(strName);
+      const openArr = ALL_OPEN[strName];
+      // 0〜12フレットの中でrootになるフレットを全て取得
+      const rootFrets = [];
+      for (let f = 0; f <= FB.frets; f++) {
+        if (openArr[f % 12] === rootNote) rootFrets.push(f);
+      }
+      if (rootFrets.length === 0) return;
+      // targetFretに最も近いフレットを選ぶ
+      const rf = rootFrets.reduce((a, b) =>
+        Math.abs(a - tf) <= Math.abs(b - tf) ? a : b
+      );
+      // スタート音と同じ位置は重複するのでスキップ
+      if (strName === c.string && rf === tf) return;
+
+      const rx = rf === 0 ? FB.padL - 8 : fretX(rf) - (fretX(1)-fretX(0))/2;
+      const ry = stringY(sIdx);
+      html += `<circle cx="${rx}" cy="${ry}" r="9" fill="var(--root-color)" opacity="0.85"/>`;
+      html += `<text x="${rx}" y="${ry+4}" text-anchor="middle" fill="#000" font-size="7" font-weight="bold">${c.key}</text>`;
+    });
+  }
+
+  svg.innerHTML = html;
+}
+
+function showScale() {
+  state.showScale = true;
+  state.showTargetOnly = true;
+  renderFretboard();
+  document.getElementById('show-scale-btn').style.display = 'none';
+  document.getElementById('fb-toggle').style.display = 'block';
+  document.getElementById('fb-toggle').textContent = t().hideScale;
+}
+
+function toggleFretboard() {
+  state.showScale = !state.showScale;
+  document.getElementById('fb-toggle').textContent = state.showScale ? t().hideScale : t().showScale;
+  renderFretboard();
+}
+
+// ============================================================
+// ANSWER
+// ============================================================
+function revealAnswer() {
+  const c = state.current;
+  if (!c) return;
+  const L = t();
+  const degIdx = DEGREE_NAMES.indexOf(c.degree);
+  const semitones = SCALES[c.scale][degIdx];
+
+  const box = document.getElementById('answer-box');
+  box.innerHTML = `
+    <div class="answer-row"><span class="akey">${L.ansStartNote}</span><span class="aval">${c.targetNote} (${stringLabel(c.string)} ${c.targetFret}${L.fretUnit})</span></div>
+    <div class="answer-row"><span class="akey">${L.ansRoot}</span><span class="aval">${c.key} (${stringLabel(c.string)} ${c.rootFret >= 0 ? c.rootFret+L.fretUnit : '—'})</span></div>
+    <div class="answer-row"><span class="akey">${L.ansInterval}</span><span class="aval">+${semitones} ${L.semitoneUnit}</span></div>
+    <div class="answer-row"><span class="akey">${L.ansScale}</span><span class="aval">${scaleName(c.scale)}</span></div>
+    <div class="answer-row"><span class="akey">${L.ansFinger}</span><span class="aval">${fingerName(c.finger)}</span></div>
+  `;
+  box.classList.add('visible');
+  document.querySelector('.reveal-btn').style.display = 'none';
+  state.showScale = false;
+  state.showTargetOnly = true;
+  renderFretboard();
+  document.getElementById('show-scale-btn').style.display = 'block';
+  document.getElementById('feedback-btns').style.display = 'flex';
+}
+
+function recordResult(correct) {
+  if (correct) {
+    scoreCorrect++;
+    streak++;
+  } else {
+    scoreWrong++;
+    streak = 0;
+  }
+  updateScoreDisplay();
+  checkLevelUp();
+  saveState();
+  setTimeout(() => generate(), 600);
+}
+
+function updateScoreDisplay() {
+  document.getElementById('score-correct').textContent = scoreCorrect;
+  document.getElementById('score-wrong').textContent = scoreWrong;
+  document.getElementById('score-streak').textContent = streak;
+}
+
+function checkLevelUp() {
+  const needed = LEVELS[unlockedLevel]?.threshold || 999;
+  if (streak >= needed && unlockedLevel < LEVELS.length - 1) {
+    unlockedLevel++;
+    renderLevelTabs();
+    // アンロックしたタブを一瞬光らせる
+    setTimeout(() => {
+      const tabs = document.querySelectorAll('.tab');
+      const newTab = tabs[unlockedLevel];
+      if (newTab) {
+        newTab.style.transition = 'box-shadow 0.3s';
+        newTab.style.boxShadow = '0 0 16px var(--accent)';
+        setTimeout(() => { newTab.style.boxShadow = ''; }, 800);
+      }
+    }, 100);
+    alert(t().unlockMsg(t().levelNames[unlockedLevel]));
+  }
+}
+
+// ============================================================
+// SOUND (Web Audio API)
+// ============================================================
+let audioCtx = null;
+function getAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function noteToFreq(noteStr, octave) {
+  const idx = NOTES_SHARP.indexOf(noteStr);
+  // A4 = 440Hz, MIDI 69
+  // C4 = MIDI 60
+  const midi = (octave + 1) * 12 + idx;
+  return 440 * Math.pow(2, (midi - 69) / 12);
+}
+
+function playNote(freq, startTime, duration) {
+  const ctx = getAudio();
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, startTime);
+
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(0.3, startTime + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+
+  osc.start(startTime);
+  osc.stop(startTime + duration + 0.05);
+}
+
+function playScaleSound() {
+  const c = state.current;
+  if (!c) return;
+  const ctx = getAudio();
+  const now = ctx.currentTime + 0.05;
+  const { scaleIntervals, keyIdx } = c;
+
+  // スタート度数のインデックスを特定
+  const degIdx = DEGREE_NAMES.indexOf(c.degree);
+  const startSemis = scaleIntervals[degIdx];
+
+  // スタート音から上行してオクターブ上のスタート音まで再生
+  // スケール音をスタート度数から並べ替える
+  const reordered = [];
+  for (let i = degIdx; i < scaleIntervals.length; i++) {
+    reordered.push(scaleIntervals[i] - startSemis); // 0始まりに正規化
+  }
+  for (let i = 0; i < degIdx; i++) {
+    reordered.push(scaleIntervals[i] + 12 - startSemis); // 次のオクターブ
+  }
+  reordered.push(12); // オクターブ上のスタート音
+
+  // スタート音のオクターブを弦に応じて設定
+  const stringOctave = { '6弦': 2, '5弦': 2, '4弦': 3, '3弦': 3, '2弦': 3, '1弦': 4 };
+  const baseOctave = stringOctave[c.string] || 3;
+  const startNoteIdx = (keyIdx + startSemis) % 12;
+
+  reordered.forEach((semis, i) => {
+    const noteIdx = (startNoteIdx + semis) % 12;
+    const octaveShift = Math.floor((startNoteIdx + semis) / 12);
+    const noteStr = NOTES_SHARP[noteIdx];
+    const freq = noteToFreq(noteStr, baseOctave + octaveShift);
+    playNote(freq, now + i * 0.35, i === reordered.length - 1 ? 0.8 : 0.5);
+  });
+}
+</script>
+</body>
+</html>
